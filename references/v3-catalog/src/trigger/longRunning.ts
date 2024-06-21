@@ -1,16 +1,15 @@
-import { logger, task } from "@trigger.dev/sdk/v3";
+import { logger, task, wait } from "@trigger.dev/sdk/v3";
 
 export const longRunning = task({
   id: "long-running",
-  run: async (payload: { message: string }) => {
-    logger.info("Long running payloadddd", { payload });
+  run: async (payload: { message: string }, { ctx }) => {
+    logger.info("Long running", { payload });
 
-    // Wait for 3 minutes
-    await new Promise((resolve) => setTimeout(resolve, 3 * 60 * 1000));
+    await new Promise((resolve) => setTimeout(resolve, 20000));
 
-    return {
-      finished: new Date().toISOString(),
-    };
+    await wait.for({ seconds: 10 });
+
+    await new Promise((resolve) => setTimeout(resolve, 20000));
   },
 });
 
@@ -35,6 +34,26 @@ export const longRunningWithDotInName = task({
 
     // Wait for 3 minutes
     await new Promise((resolve) => setTimeout(resolve, 3 * 60 * 1000));
+
+    return {
+      finished: new Date().toISOString(),
+    };
+  },
+});
+
+export const longRunningWithLotsOfLogs = task({
+  id: "long-running-lots-of-logs",
+  run: async (payload: { message: string }) => {
+    const largeObject = Array.from({ length: 256 }, (_, i) => i).reduce((acc, i) => {
+      acc[i] = "a".repeat(100);
+      return acc;
+    }, {} as any);
+
+    // Log 10000 times over 3 minutes
+    for (let i = 0; i < 20000; i++) {
+      logger.info("Log number " + i, { largeObject });
+      await new Promise((resolve) => setTimeout(resolve, 18));
+    }
 
     return {
       finished: new Date().toISOString(),
